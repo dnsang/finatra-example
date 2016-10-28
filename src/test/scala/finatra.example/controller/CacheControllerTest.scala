@@ -1,25 +1,15 @@
 package finatra.example.controller
 
-import java.net.InetSocketAddress
-
-import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.http.Status
+import com.twitter.finagle.http.Status.Ok
 import com.twitter.finatra.http.EmbeddedHttpServer
 import com.twitter.finatra.thrift.ThriftClient
 import com.twitter.inject.server.FeatureTest
-import com.twitter.finagle.http.Status.Ok
-import com.twitter.finagle.thrift.ThriftClientFramedCodec
-import com.twitter.util.Future
-import org.scalatest.Assertions
 import finatra.example.Server
-import finatra.example.domain.UserID
-import finatra.example.domain.thrift.{TUserID, TUserInfo}
-import finatra.example.service.TUserCacheService.FinagledClient
-import finatra.example.service.{TUserCacheService, UserCacheService}
 
 /**
-  * Created by SangDang on 9/18/16.
-  */
+ * Created by SangDang on 9/18/16.
+ */
 class CacheControllerTest extends FeatureTest {
   override protected val server = new EmbeddedHttpServer(twitterServer = new Server) with ThriftClient
 
@@ -66,37 +56,4 @@ class CacheControllerTest extends FeatureTest {
     }
 
   }
-  "[Thrift] put cache" should {
-    lazy val client = server.thriftClient[TUserCacheService[Future]](clientId = "1")
-    "successful" in {
-      client.addUser(TUserInfo(TUserID("101"), "test", 100, "male"))
-      client.getUser(TUserID("101")).onSuccess(userInfo => {
-        Assertions.assert(userInfo.userId.equals("101"))
-        Assertions.assert(userInfo.username.equals("test"))
-        Assertions.assert(userInfo.age.equals(100))
-        Assertions.assert(userInfo.sex.equals("male"))
-      }).onFailure(fn => throw fn)
-
-    }
-  }
-
-  "[Thrift] external put cache" should {
-    lazy val clientService = ClientBuilder()
-      .hosts(Seq(new InetSocketAddress("localhost", server.thriftExternalPort)))
-      .codec(ThriftClientFramedCodec())
-      .hostConnectionLimit(1)
-      .build()
-    val client = new FinagledClient(clientService)
-    "successful" in {
-      client.addUser(TUserInfo(TUserID("111"), "t_test", 101, "female"))
-      client.getUser(TUserID("111")).onSuccess(userInfo => {
-        Assertions.assert(userInfo.userId.equals("111"))
-        Assertions.assert(userInfo.username.equals("t_test"))
-        Assertions.assert(userInfo.age.equals(101))
-        Assertions.assert(userInfo.sex.equals("female"))
-      }).onFailure(fn => throw fn)
-
-    }
-  }
-
 }
